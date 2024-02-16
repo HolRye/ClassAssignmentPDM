@@ -1,45 +1,72 @@
-let paletteColors = ['#FF0000', '#FFA500', '#FFFF00', '#008000', '#00FFFF', '#0000FF', '#FF00FF', '#A52A2A', '#FFFFFF', '#000000'];
-let currentColor = '#000000';
-let paletteWidth = 50;
-let paletteHeight = 30;
-let canvasWidth = 600;
-let canvasHeight = 400;
+let character;
+let characters = [];
+
+function preload() {
+  // Load the sprite sheets
+  character = loadSpriteSheet('spriteAssets/character.png', 32, 32, 8); // Assuming each frame is 32x32 and there are 8 frames
+}
 
 function setup() {
-  createCanvas(canvasWidth + paletteWidth, canvasHeight);
-  background(255);
+  createCanvas(800, 600);
 
-  //this makes the canvas for the project, also displays the "buttons" to select the differet colors on the color pallet on the left side of the screen
-  for (let i = 0; i < paletteColors.length; i++) {
-    let x = 0;
-    let y = i * paletteHeight;
-    fill(paletteColors[i]);
-    rect(x, y, paletteWidth, paletteHeight);
+  // Instantiate several characters at random positions
+  for (let i = 0; i < 5; i++) {
+    let x = random(width);
+    let y = random(height);
+    characters.push(new Character(x, y));
   }
 }
 
 function draw() {
-  //below fucntion lets you actually draw and registers the mouse input on the canvas
-  if (mouseIsPressed && mouseX > 0 && mouseX < paletteWidth && mouseY < height) {
-    strokeWeight(5);
-    stroke(currentColor);
-    line(pmouseX, pmouseY, mouseX, mouseY);
+  background(220);
+  image(character,200,200,80,80,0,0,80,80);
+
+  // Handle user control for all characters
+  for (let i = 0; i < characters.length; i++) {
+    characters[i].control();
+    characters[i].update();
+    characters[i].display();
   }
 }
 
-function mousePressed() {
-//below code allows the user to select the different color pallet selecitons on the left side of the screen
-  if (mouseX > 0 && mouseX < paletteWidth && mouseY < height) {
-    let colorIndex = int(mouseY / paletteHeight);
-    currentColor = paletteColors[colorIndex];
-  }
-}
+class Character {
+  constructor(x, y) {
+    this.sprite = createSprite(x, y, 32, 32);
+    this.sprite.addAnimation('stand', loadAnimation(character));
+    this.sprite.addAnimation('walkRight', loadAnimation(character));
+    this.sprite.addAnimation('walkLeft', loadAnimation(character)); // Left-facing animation will be mirrored
 
-function mouseDragged() {
-//this portion is to stop the drawings to overlap over the color pallet selecitons on the left
-  if (mouseX > paletteWidth && mouseY < height) {
-    strokeWeight(5);
-    stroke(currentColor);
-    line(pmouseX, pmouseY, mouseX, mouseY);
+    // Define walking animation frames
+    this.sprite.animation.frameDelay = 8; // Adjust this value according to the sprite sheet
+
+    // Initialize direction
+    this.direction = 'stand';
+  }
+
+  control() {
+    if (keyIsDown(RIGHT_ARROW)) {
+      this.direction = 'walkRight';
+      this.sprite.mirrorX(1); // Reset mirroring if previously facing left
+      this.sprite.velocity.x = 1;
+    } else if (keyIsDown(LEFT_ARROW)) {
+      this.direction = 'walkLeft';
+      this.sprite.mirrorX(-1); // Flip sprite horizontally for left-facing animation
+      this.sprite.velocity.x = -1;
+    } else {
+      this.direction = 'stand';
+      this.sprite.velocity.x = 0;
+    }
+  }
+
+  update() {
+    // Update sprite animation based on direction
+    this.sprite.changeAnimation(this.direction);
+
+    // Update sprite position
+    this.sprite.position.x += this.sprite.velocity.x;
+  }
+
+  display() {
+    drawSprites();
   }
 }
